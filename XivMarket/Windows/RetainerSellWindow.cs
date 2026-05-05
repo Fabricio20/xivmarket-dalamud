@@ -106,6 +106,7 @@ public sealed class RetainerSellWindow : Window, IDisposable
                 "[XivMarket] retainer-sell: item={Item} world={World} status={Status} hasData={HasData}",
                 this.currentItemId, worldId.Value, entry?.Status, data != null);
 
+        var vendorPrice = (long)this.plugin.Marketability.VendorSellPrice((int)this.currentItemId);
         var config = this.plugin.Configuration;
         this.recommendedPrice = PriceCalculator.GetRecommendedPrice(
             data,
@@ -115,7 +116,8 @@ public sealed class RetainerSellWindow : Window, IDisposable
             Math.Max(1, config.RoundTo),
             config.RoundUp,
             (PriceScope)config.PriceSourceScope,
-            (QualityMode)config.UndercutQualityMode);
+            (QualityMode)config.UndercutQualityMode,
+            vendorPrice);
 
         this.statusMessage = this.recommendedPrice is null ? "No price data available." : null;
     }

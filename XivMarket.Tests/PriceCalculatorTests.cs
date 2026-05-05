@@ -164,6 +164,42 @@ public class PriceCalculatorTests
         Assert.Equal(2860, result);
     }
 
+    [Fact]
+    public void VendorFloor_PreventsGoingBelowNpcPrice()
+    {
+        var tooltip = MakeTooltip(nqPrice: 50, hqPrice: null);
+        var result = PriceCalculator.GetRecommendedPrice(
+            tooltip, false, false,
+            undercutAmount: 10, roundTo: 1, roundUp: false,
+            PriceScope.World, QualityMode.Any,
+            vendorPrice: 100);
+        Assert.Equal(100, result);
+    }
+
+    [Fact]
+    public void VendorFloor_DoesNotAffectWhenPriceIsHigher()
+    {
+        var tooltip = MakeTooltip(nqPrice: 500, hqPrice: null);
+        var result = PriceCalculator.GetRecommendedPrice(
+            tooltip, false, false,
+            undercutAmount: 0, roundTo: 1, roundUp: false,
+            PriceScope.World, QualityMode.Any,
+            vendorPrice: 100);
+        Assert.Equal(500, result);
+    }
+
+    [Fact]
+    public void VendorFloor_ZeroVendorPrice_NoEffect()
+    {
+        var tooltip = MakeTooltip(nqPrice: 5, hqPrice: null);
+        var result = PriceCalculator.GetRecommendedPrice(
+            tooltip, false, false,
+            undercutAmount: 10, roundTo: 1, roundUp: false,
+            PriceScope.World, QualityMode.Any,
+            vendorPrice: 0);
+        Assert.Equal(1, result);
+    }
+
     // -------- helpers --------
 
     private static ItemTooltip MakeTooltip(long? nqPrice, long? hqPrice)

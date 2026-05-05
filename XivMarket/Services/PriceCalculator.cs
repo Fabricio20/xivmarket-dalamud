@@ -16,7 +16,8 @@ public static class PriceCalculator
         int roundTo,
         bool roundUp,
         PriceScope scope,
-        QualityMode qualityMode)
+        QualityMode qualityMode,
+        long vendorPrice = 0)
     {
         if (data is null) return null;
 
@@ -42,7 +43,11 @@ public static class PriceCalculator
                 : Math.Floor(price / roundTo) * roundTo;
         }
 
-        return Math.Max(1, (long)price);
+        var result = Math.Max(1, (long)price);
+        if (vendorPrice > 0)
+            result = Math.Max(result, vendorPrice);
+
+        return result;
     }
 
     private static long? GetBasePrice(Scope scopeData, bool isHq, bool canBeHq, QualityMode qualityMode)

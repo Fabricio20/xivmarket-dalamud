@@ -13,7 +13,7 @@ public sealed class MarketabilityProvider
 {
     private readonly IDataManager data;
     private readonly IPluginLog? log;
-    private readonly ConcurrentDictionary<int, (bool Marketable, bool CanBeHq)> cache = new();
+    private readonly ConcurrentDictionary<int, (bool Marketable, bool CanBeHq, uint VendorPrice)> cache = new();
 
     public MarketabilityProvider(IDataManager data, IPluginLog? log = null)
     {
@@ -25,24 +25,26 @@ public sealed class MarketabilityProvider
 
     public bool CanBeHq(int itemId) => this.GetOrCompute(itemId).CanBeHq;
 
-    private (bool Marketable, bool CanBeHq) GetOrCompute(int itemId) =>
+    public uint VendorSellPrice(int itemId) => this.GetOrCompute(itemId).VendorPrice;
+
+    private (bool Marketable, bool CanBeHq, uint VendorPrice) GetOrCompute(int itemId) =>
         this.cache.GetOrAdd(itemId, this.Compute);
 
-    private (bool Marketable, bool CanBeHq) Compute(int itemId)
+    private (bool Marketable, bool CanBeHq, uint VendorPrice) Compute(int itemId)
     {
         if (itemId <= 0)
-            return (false, false);
+            return (false, false, 0);
         try
         {
             var sheet = this.data.GetExcelSheet<Item>();
             if (!sheet.TryGetRow((uint)itemId, out var row))
-                return (false, false);
-            return (row.ItemSearchCategory.RowId != 0, row.CanBeHq);
+                return (false, false, 0);
+            return (row.ItemSearchCategory.RowId != 0, row.CanBeHq, row.PriceLow);
         }
         catch (Exception ex)
         {
             this.log?.Warning(ex, "Lumina lookup failed for item {Id}", itemId);
-            return (false, false);
+            return (false, false, 0);
         }
     }
 }
