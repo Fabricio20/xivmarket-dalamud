@@ -17,6 +17,7 @@ internal class Service
     [PluginService] internal static IKeyState KeyState { get; private set; }
     [PluginService] internal static IPluginLog PluginLog { get; private set; }
     [PluginService] internal static IAddonLifecycle AddonLifecycle { get; private set; }
+    [PluginService] internal static IMarketBoard MarketBoard { get; private set; }
 
     internal static void Initialize(IDalamudPluginInterface pluginInterface)
     {

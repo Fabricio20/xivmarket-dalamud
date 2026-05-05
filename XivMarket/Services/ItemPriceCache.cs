@@ -38,8 +38,11 @@ public sealed class ItemPriceCache : IDisposable
     /// <summary>Fired (on a thread-pool thread) after an entry's status transitions due to a fetch.</summary>
     public event Action<int, int>? Updated;
 
-    /// <summary>Fired (on a thread-pool thread) after a batch HTTP request completes. Args: (count, success).</summary>
-    public event Action<int, bool>? BatchFetched;
+    /// <summary>Fired (on a thread-pool thread) after a batch HTTP request completes. Args: (count, success, errorMessage?).</summary>
+    public event Action<int, bool, string?>? BatchFetched;
+
+    /// <summary>Optional log sink for diagnostic messages (wired by the plugin to IPluginLog).</summary>
+    public Action<string, object?[]>? DebugLog { get; set; }
 
     public ItemPriceCache(
         IXivMarketClient client,
@@ -136,6 +139,29 @@ public sealed class ItemPriceCache : IDisposable
         }
     }
 
+    /// <summary>
+    /// Merges live game data into the cache. Always wins over API data (game is freshest source).
+    /// </summary>
+    public void Splice(SpliceUpdate update)
+    {
+        this.entries.TryGetValue((update.ItemId, update.WorldId), out var existing);
+        var result = SpliceLogic.ApplySplice(existing?.Data, update);
+
+        this.DebugLog?.Invoke(
+            "[XivMarket] splice item={Item} {Quality} {Price}g x{Qty} world={World} dc={DcDec} region={RegionDec}",
+            new object?[] { update.ItemId, update.IsHq ? "HQ" : "NQ", update.Price, update.Quantity, update.WorldName, result.DcDecision, result.RegionDecision });
+
+        var newEntry = new CacheEntry(
+            LookupStatus.Loaded,
+            result.Tooltip,
+            existing?.FetchedAt ?? this.now(),
+            null,
+            update.Timestamp);
+
+        this.entries[(update.ItemId, update.WorldId)] = newEntry;
+        this.Updated?.Invoke(update.ItemId, update.WorldId);
+    }
+
     private bool IsExpired(CacheEntry e) => this.now() - e.FetchedAt > this.ttlProvider();
 
     private void EnqueueFetch(int itemId, int worldId)
@@ -193,13 +219,32 @@ public sealed class ItemPriceCache : IDisposable
             var fetchedAt = this.now();
             foreach (var id in itemIds)
             {
-                var entry = result.TryGetValue(id, out var data)
-                    ? new CacheEntry(LookupStatus.Loaded, data, fetchedAt, null)
-                    : new CacheEntry(LookupStatus.Failed, null, fetchedAt, "Server omitted item from response");
+                if (!result.TryGetValue(id, out var data))
+                {
+                    if (!this.ShouldOverwriteWithFailure(id, worldId))
+                        continue;
+                    this.entries[(id, worldId)] = new CacheEntry(LookupStatus.Failed, null, fetchedAt, "Server omitted item from response");
+                    this.Updated?.Invoke(id, worldId);
+                    continue;
+                }
+
+                var freshness = CacheEntry.DeriveFreshness(data);
+                if (this.entries.TryGetValue((id, worldId), out var existing)
+                    && existing.DataFreshness.HasValue
+                    && freshness.HasValue
+                    && freshness.Value <= existing.DataFreshness.Value)
+                {
+                    this.DebugLog?.Invoke(
+                        "[XivMarket] freshness gate: skipping API data for item={Item} (api={ApiFreshness}, cached={CachedFreshness})",
+                        new object?[] { id, freshness.Value, existing.DataFreshness.Value });
+                    continue;
+                }
+
+                var entry = new CacheEntry(LookupStatus.Loaded, data, fetchedAt, null, freshness);
                 this.entries[(id, worldId)] = entry;
                 this.Updated?.Invoke(id, worldId);
             }
-            this.BatchFetched?.Invoke(itemIds.Length, true);
+            this.BatchFetched?.Invoke(itemIds.Length, true, null);
         }
         catch (OperationCanceledException) when (this.lifetimeCts.IsCancellationRequested)
         {
@@ -207,14 +252,27 @@ public sealed class ItemPriceCache : IDisposable
         }
         catch (Exception ex)
         {
+            this.DebugLog?.Invoke(
+                "[XivMarket] fetch failed: items=[{Items}] error={Error}",
+                new object?[] { string.Join(",", itemIds), ex.Message });
+
             var fetchedAt = this.now();
             foreach (var id in itemIds)
             {
+                if (!this.ShouldOverwriteWithFailure(id, worldId))
+                    continue;
                 this.entries[(id, worldId)] = new CacheEntry(LookupStatus.Failed, null, fetchedAt, ex.Message);
                 this.Updated?.Invoke(id, worldId);
             }
-            this.BatchFetched?.Invoke(itemIds.Length, false);
+            this.BatchFetched?.Invoke(itemIds.Length, false, ex.Message);
         }
+    }
+
+    private bool ShouldOverwriteWithFailure(int itemId, int worldId)
+    {
+        if (!this.entries.TryGetValue((itemId, worldId), out var existing))
+            return true;
+        return existing.Status != LookupStatus.Loaded;
     }
 
     public void Dispose()

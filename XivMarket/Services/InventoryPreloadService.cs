@@ -73,13 +73,13 @@ public sealed class InventoryPreloadService : IDisposable
         plugin.Cache.BatchFetched += this.OnBatchFetched;
     }
 
-    private void OnBatchFetched(int count, bool success)
+    private void OnBatchFetched(int count, bool success, string? error)
     {
         if (this.disposed) return;
         if (success)
             Service.PluginLog.Information("[XivMarket] preload: fetched {Count} items", count);
         else
-            Service.PluginLog.Warning("[XivMarket] preload: batch of {Count} items failed", count);
+            Service.PluginLog.Warning("[XivMarket] preload: batch of {Count} items failed: {Error}", count, error ?? "unknown");
     }
 
     private void OnInventoryUpdate(AddonEvent type, AddonArgs args) =>
