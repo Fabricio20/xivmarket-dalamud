@@ -1,6 +1,6 @@
 {
   "Author": "notfab",
-  "Name": "XIV Market",
+  "Name": "XIVMarket",
   "Punchline": "Query XivMarket prices and history without alt-tabbing.",
   "Description": "Looks up items against the XivMarket API and shows price summaries, history, and recent sales in-game.",
   "ApplicableVersion": "any",

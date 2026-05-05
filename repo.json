@@ -1,0 +1,18 @@
+[
+  {
+    "Author": "notfab",
+    "Name": "XIVMarket",
+    "Punchline": "Query XivMarket prices and history without alt-tabbing.",
+    "Description": "Looks up items against the XivMarket API and shows price summaries, history, and recent sales in-game.",
+    "Tags": ["market", "marketboard", "prices", "xivmarket"],
+    "InternalName": "XivMarket",
+    "AssemblyVersion": "0.0.1.0",
+    "RepoUrl": "https://github.com/Fabricio20/xivmarket-dalamud",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 15,
+    "IsHide": "False",
+    "DownloadLinkInstall": "https://github.com/Fabricio20/xivmarket-dalamud/raw/main/latest.zip",
+    "DownloadLinkTesting": "https://github.com/Fabricio20/xivmarket-dalamud/raw/main/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/Fabricio20/xivmarket-dalamud/raw/main/latest.zip"
+  }
+]
