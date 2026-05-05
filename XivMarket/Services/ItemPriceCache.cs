@@ -38,6 +38,9 @@ public sealed class ItemPriceCache : IDisposable
     /// <summary>Fired (on a thread-pool thread) after an entry's status transitions due to a fetch.</summary>
     public event Action<int, int>? Updated;
 
+    /// <summary>Fired (on a thread-pool thread) after a batch HTTP request completes. Args: (count, success).</summary>
+    public event Action<int, bool>? BatchFetched;
+
     public ItemPriceCache(
         IXivMarketClient client,
         Func<int, bool> isMarketable,
@@ -196,6 +199,7 @@ public sealed class ItemPriceCache : IDisposable
                 this.entries[(id, worldId)] = entry;
                 this.Updated?.Invoke(id, worldId);
             }
+            this.BatchFetched?.Invoke(itemIds.Length, true);
         }
         catch (OperationCanceledException) when (this.lifetimeCts.IsCancellationRequested)
         {
@@ -209,6 +213,7 @@ public sealed class ItemPriceCache : IDisposable
                 this.entries[(id, worldId)] = new CacheEntry(LookupStatus.Failed, null, fetchedAt, ex.Message);
                 this.Updated?.Invoke(id, worldId);
             }
+            this.BatchFetched?.Invoke(itemIds.Length, false);
         }
     }
 

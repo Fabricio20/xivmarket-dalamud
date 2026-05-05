@@ -24,6 +24,7 @@ public sealed class Plugin : IDalamudPlugin
     public WorldsService Worlds { get; }
     public MarketabilityProvider Marketability { get; }
     public TooltipInjector Injector { get; }
+    public InventoryPreloadService InventoryPreload { get; }
     public ItemDetailHook Hook { get; }
     public WindowSystem WindowSystem { get; } = new("XivMarket");
 
@@ -50,6 +51,7 @@ public sealed class Plugin : IDalamudPlugin
                 () => this.Configuration.CacheTtl);
 
             this.Injector = new TooltipInjector(Service.GameGui, Service.PluginLog);
+            this.InventoryPreload = new InventoryPreloadService(this);
             this.Hook = new ItemDetailHook(this);
 
             this.configWindow = new ConfigWindow(this);
@@ -94,6 +96,7 @@ public sealed class Plugin : IDalamudPlugin
         // then cancel async work (cache, worlds), then UI.
         TryRun("startup cancellation", () => { this.startupCts.Cancel(); this.startupCts.Dispose(); });
         TryRun("hook unregister", () => this.Hook?.Dispose());
+        TryRun("inventory preload unregister", () => this.InventoryPreload?.Dispose());
 
         TryRun("framework-thread injector cleanup", () =>
         {
