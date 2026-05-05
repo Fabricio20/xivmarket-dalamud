@@ -165,7 +165,7 @@ public class PriceCalculatorTests
     }
 
     [Fact]
-    public void VendorFloor_PreventsGoingBelowNpcPrice()
+    public void VendorFloor_PreventsGoingBelowNpcPricePlusTax()
     {
         var tooltip = MakeTooltip(nqPrice: 50, hqPrice: null);
         var result = PriceCalculator.GetRecommendedPrice(
@@ -173,7 +173,8 @@ public class PriceCalculatorTests
             undercutAmount: 10, roundTo: 1, roundUp: false,
             PriceScope.World, QualityMode.Any,
             vendorPrice: 100);
-        Assert.Equal(100, result);
+        // ceil(100 / 0.95) = 106 -- listing at 106 nets 100.7 after 5% tax
+        Assert.Equal(106, result);
     }
 
     [Fact]

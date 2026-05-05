@@ -45,7 +45,10 @@ public static class PriceCalculator
 
         var result = Math.Max(1, (long)price);
         if (vendorPrice > 0)
-            result = Math.Max(result, vendorPrice);
+        {
+            var vendorFloor = (long)Math.Ceiling(vendorPrice / 0.95m);
+            result = Math.Max(result, vendorFloor);
+        }
 
         return result;
     }
