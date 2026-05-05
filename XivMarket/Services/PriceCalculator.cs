@@ -44,6 +44,9 @@ public static class PriceCalculator
         }
 
         var result = Math.Max(1, (long)price);
+        // Vendor floor: never recommend below what netting the NPC sell price after
+        // worst-case 5% market tax requires. The vendorPrice caller already accounts
+        // for HQ (+10%) and the materia PriceMid/50 quirk.
         if (vendorPrice > 0)
         {
             var vendorFloor = (long)Math.Ceiling(vendorPrice / 0.95m);

@@ -61,7 +61,6 @@ public sealed class InventoryPreloadService : IDisposable
     private DateTimeOffset lastInventoryPreload = DateTimeOffset.MinValue;
     private DateTimeOffset lastSaddlebagPreload = DateTimeOffset.MinValue;
     private DateTimeOffset lastArmouryPreload = DateTimeOffset.MinValue;
-    private DateTimeOffset lastRetainerSellPreload = DateTimeOffset.MinValue;
     private bool disposed;
 
     public InventoryPreloadService(Plugin plugin)
@@ -103,16 +102,25 @@ public sealed class InventoryPreloadService : IDisposable
         this.TryPreload(ref this.lastArmouryPreload, ArmourySlots, "armoury");
 
     private void OnRetainerSellUpdate(AddonEvent type, AddonArgs args) =>
-        this.TryPreload(ref this.lastRetainerSellPreload, RetainerMarket, "retainer market");
+        this.TryPreloadAlways(RetainerMarket, "retainer market");
+
+    private void TryPreloadAlways(InventoryType[] bags, string label) =>
+        this.DoPreload(bags, label);
 
     private void TryPreload(ref DateTimeOffset lastPreload, InventoryType[] bags, string label)
     {
         if (this.disposed) return;
+        var now = DateTimeOffset.UtcNow;
+        if (now - lastPreload < TimeSpan.FromSeconds(60)) return;
+        lastPreload = now;
+        this.DoPreload(bags, label);
+    }
+
+    private void DoPreload(InventoryType[] bags, string label)
+    {
+        if (this.disposed) return;
         try
         {
-            var now = DateTimeOffset.UtcNow;
-            if (now - lastPreload < TimeSpan.FromSeconds(60)) return;
-            lastPreload = now;
 
             if (!Service.ClientState.IsLoggedIn) return;
             var worldId = (int)Service.PlayerState.HomeWorld.RowId;

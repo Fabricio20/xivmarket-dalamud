@@ -25,6 +25,7 @@ public sealed class Plugin : IDalamudPlugin
     public MarketabilityProvider Marketability { get; }
     public TooltipInjector Injector { get; }
     public MarketBoardSpliceHook MarketBoardSplice { get; }
+    public RetainerSellListHighlighter RetainerHighlighter { get; }
     public InventoryPreloadService InventoryPreload { get; }
     public ItemDetailHook Hook { get; }
     public WindowSystem WindowSystem { get; } = new("XivMarket");
@@ -59,6 +60,7 @@ public sealed class Plugin : IDalamudPlugin
 
             this.Injector = new TooltipInjector(Service.GameGui, Service.PluginLog);
             this.MarketBoardSplice = new MarketBoardSpliceHook(this);
+            this.RetainerHighlighter = new RetainerSellListHighlighter(this);
             this.InventoryPreload = new InventoryPreloadService(this);
             this.Hook = new ItemDetailHook(this);
 
@@ -107,6 +109,7 @@ public sealed class Plugin : IDalamudPlugin
         TryRun("startup cancellation", () => { this.startupCts.Cancel(); this.startupCts.Dispose(); });
         TryRun("hook unregister", () => this.Hook?.Dispose());
         TryRun("mb splice unregister", () => this.MarketBoardSplice?.Dispose());
+        TryRun("retainer highlighter unregister", () => this.RetainerHighlighter?.Dispose());
         TryRun("inventory preload unregister", () => this.InventoryPreload?.Dispose());
 
         TryRun("framework-thread injector cleanup", () =>

@@ -106,7 +106,7 @@ public sealed class RetainerSellWindow : Window, IDisposable
                 "[XivMarket] retainer-sell: item={Item} world={World} status={Status} hasData={HasData}",
                 this.currentItemId, worldId.Value, entry?.Status, data != null);
 
-        var vendorPrice = (long)this.plugin.Marketability.VendorSellPrice((int)this.currentItemId);
+        var vendorPrice = this.plugin.Marketability.VendorSellPrice((int)this.currentItemId, this.currentIsHq);
         var config = this.plugin.Configuration;
         this.recommendedPrice = PriceCalculator.GetRecommendedPrice(
             data,
