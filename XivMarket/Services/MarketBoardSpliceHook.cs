@@ -31,6 +31,11 @@ public sealed class MarketBoardSpliceHook : IDisposable
             var requestId = offerings.RequestId;
             var itemId = (int)listings[0].ItemId;
 
+            var worldId = this.GetCurrentWorldId();
+            if (worldId is null) return;
+            var worldName = this.plugin.Worlds.Lookup(worldId.Value)?.Name;
+            if (worldName is null) return;
+
             if (requestId != this.lastRequestId)
             {
                 this.lastRequestId = requestId;
@@ -39,16 +44,11 @@ public sealed class MarketBoardSpliceHook : IDisposable
 
                 if (this.plugin.Configuration.DebugLogging)
                     Service.PluginLog.Information(
-                        "[XivMarket] mb splice: new request id={RequestId} item={Item} listings={Count}",
-                        requestId, itemId, listings.Count);
+                        "[XivMarket] mb splice: new request id={RequestId} item={Item} world={World} listings={Count}",
+                        requestId, itemId, worldName, listings.Count);
             }
 
             if (this.firedNq && this.firedHq) return;
-
-            var worldId = this.GetHomeWorldId();
-            if (worldId is null) return;
-            var worldName = this.GetHomeWorldName();
-            if (worldName is null) return;
 
             var now = DateTimeOffset.UtcNow;
 
@@ -96,24 +96,13 @@ public sealed class MarketBoardSpliceHook : IDisposable
         }
     }
 
-    private int? GetHomeWorldId()
+    private int? GetCurrentWorldId()
     {
         try
         {
             if (!Service.ClientState.IsLoggedIn) return null;
-            var id = (int)Service.PlayerState.HomeWorld.RowId;
+            var id = (int)Service.PlayerState.CurrentWorld.RowId;
             return id > 0 ? id : null;
-        }
-        catch { return null; }
-    }
-
-    private string? GetHomeWorldName()
-    {
-        try
-        {
-            var id = this.GetHomeWorldId();
-            if (id is null) return null;
-            return this.plugin.Worlds.Lookup(id.Value)?.Name;
         }
         catch { return null; }
     }
