@@ -30,6 +30,7 @@
     <Compile Include="..\XivMarket\Services\ItemPriceCache.cs" Link="Services\ItemPriceCache.cs" />
     <Compile Include="..\XivMarket\Services\TooltipRenderer.cs" Link="Services\TooltipRenderer.cs" />
     <Compile Include="..\XivMarket\Services\SpliceLogic.cs" Link="Services\SpliceLogic.cs" />
+    <Compile Include="..\XivMarket\Services\PriceCalculator.cs" Link="Services\PriceCalculator.cs" />
     <Compile Include="..\XivMarket\Models\SpliceUpdate.cs" Link="Models\SpliceUpdate.cs" />
   </ItemGroup>
 

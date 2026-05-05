@@ -31,6 +31,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly MainWindow mainWindow;
     private readonly ConfigWindow configWindow;
+    private readonly RetainerSellWindow retainerSellWindow;
     private readonly CancellationTokenSource startupCts = new();
     private bool disposed;
 
@@ -63,8 +64,10 @@ public sealed class Plugin : IDalamudPlugin
 
             this.configWindow = new ConfigWindow(this);
             this.mainWindow = new MainWindow(this);
+            this.retainerSellWindow = new RetainerSellWindow(this);
             this.WindowSystem.AddWindow(this.configWindow);
             this.WindowSystem.AddWindow(this.mainWindow);
+            this.WindowSystem.AddWindow(this.retainerSellWindow);
 
             Service.CommandManager.AddHandler(MainCommand, new CommandInfo(this.OnCommand)
             {
@@ -143,6 +146,7 @@ public sealed class Plugin : IDalamudPlugin
                 pi.UiBuilder.OpenConfigUi -= this.ToggleConfigUi;
             }
             this.WindowSystem.RemoveAllWindows();
+            this.retainerSellWindow?.Dispose();
             this.mainWindow?.Dispose();
             this.configWindow?.Dispose();
         });

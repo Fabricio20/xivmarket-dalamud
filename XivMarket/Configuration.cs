@@ -19,6 +19,21 @@ public class Configuration : IPluginConfiguration
     /// <summary>If true, log per-hover diagnostic info (hovered id, isHq, ctrl, cache status). Verbose.</summary>
     public bool DebugLogging { get; set; } = false;
 
+    /// <summary>Gil to subtract from cheapest price. 0 = match cheapest exactly.</summary>
+    public int UndercutAmount { get; set; } = 0;
+
+    /// <summary>Round to nearest multiple. 1 = no rounding, 10 = round to 10s, etc.</summary>
+    public int RoundTo { get; set; } = 10;
+
+    /// <summary>If true, round UP (encourages stable prices). If false, round DOWN.</summary>
+    public bool RoundUp { get; set; } = true;
+
+    /// <summary>Which scope to pull the base price from. 0=World, 1=DC, 2=Region.</summary>
+    public int PriceSourceScope { get; set; } = 0;
+
+    /// <summary>Quality comparison mode. 0=Any, 1=MatchingQuality, 2=NqOnly, 3=HqOnly.</summary>
+    public int UndercutQualityMode { get; set; } = 1;
+
     public TimeSpan CacheTtl => TimeSpan.FromSeconds(Math.Max(60, this.CacheTtlSeconds));
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
