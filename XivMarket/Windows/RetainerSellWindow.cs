@@ -20,6 +20,7 @@ public sealed class RetainerSellWindow : Window, IDisposable
     private readonly IAddonLifecycle.AddonEventDelegate onPostSetup;
     private readonly IAddonLifecycle.AddonEventDelegate onPreFinalize;
     private readonly IAddonLifecycle.AddonEventDelegate onPostDraw;
+    private readonly IAddonLifecycle.AddonEventDelegate onPostUpdate;
     private readonly Action<int, int> onCacheUpdated;
 
     private uint currentItemId;
@@ -41,11 +42,13 @@ public sealed class RetainerSellWindow : Window, IDisposable
         this.onPostSetup = this.OnPostSetup;
         this.onPreFinalize = this.OnPreFinalize;
         this.onPostDraw = this.OnPostDraw;
+        this.onPostUpdate = this.OnPostUpdate;
         this.onCacheUpdated = this.OnCacheUpdated;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, AddonName, this.onPostSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, AddonName, this.onPreFinalize);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, AddonName, this.onPostDraw);
+        Service.AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, AddonName, this.onPostUpdate);
         plugin.Cache.Updated += this.onCacheUpdated;
     }
 
@@ -60,6 +63,13 @@ public sealed class RetainerSellWindow : Window, IDisposable
     {
         this.IsOpen = false;
         this.currentItemId = 0;
+    }
+
+    private unsafe void OnPostUpdate(AddonEvent type, AddonArgs args)
+    {
+        var newItemId = this.GetCurrentItemId();
+        if (newItemId != 0 && newItemId != this.currentItemId)
+            this.Recompute();
     }
 
     private unsafe void OnPostDraw(AddonEvent type, AddonArgs args)
@@ -101,13 +111,10 @@ public sealed class RetainerSellWindow : Window, IDisposable
         this.plugin.Cache.TryGet((int)this.currentItemId, worldId.Value, out var entry);
         var data = entry?.Data;
 
-        if (this.plugin.Configuration.DebugLogging)
-            Service.PluginLog.Information(
-                "[XivMarket] retainer-sell: item={Item} world={World} status={Status} hasData={HasData}",
-                this.currentItemId, worldId.Value, entry?.Status, data != null);
-
         var vendorPrice = this.plugin.Marketability.VendorSellPrice((int)this.currentItemId, this.currentIsHq);
         var config = this.plugin.Configuration;
+        var scope = (PriceScope)config.PriceSourceScope;
+        var qMode = (QualityMode)config.UndercutQualityMode;
         this.recommendedPrice = PriceCalculator.GetRecommendedPrice(
             data,
             this.currentIsHq,
@@ -115,9 +122,22 @@ public sealed class RetainerSellWindow : Window, IDisposable
             config.UndercutAmount,
             Math.Max(1, config.RoundTo),
             config.RoundUp,
-            (PriceScope)config.PriceSourceScope,
-            (QualityMode)config.UndercutQualityMode,
+            scope,
+            qMode,
             vendorPrice);
+
+        if (this.plugin.Configuration.DebugLogging)
+            Service.PluginLog.Information(
+                "[XivMarket] retainer-sell: item={Item} world={World} status={Status} hasData={HasData} " +
+                "vendor={Vendor} scope={Scope} qMode={QMode} undercut={Undercut} roundTo={RoundTo} roundUp={RoundUp} " +
+                "recommended={Recommended}",
+                this.currentItemId, worldId.Value, entry?.Status, data != null,
+                vendorPrice, scope, qMode, config.UndercutAmount, config.RoundTo, config.RoundUp,
+                this.recommendedPrice);
+        else
+            Service.PluginLog.Information(
+                "[XivMarket] retainer-sell: item={Item} vendor={Vendor} recommended={Recommended}",
+                this.currentItemId, vendorPrice, this.recommendedPrice);
 
         this.statusMessage = this.recommendedPrice is null ? "No price data available." : null;
     }
@@ -218,6 +238,7 @@ public sealed class RetainerSellWindow : Window, IDisposable
             Service.AddonLifecycle.UnregisterListener(this.onPostSetup);
             Service.AddonLifecycle.UnregisterListener(this.onPreFinalize);
             Service.AddonLifecycle.UnregisterListener(this.onPostDraw);
+            Service.AddonLifecycle.UnregisterListener(this.onPostUpdate);
         }
         catch (Exception ex)
         {
