@@ -13,6 +13,7 @@ public sealed class InventoryPreloadService : IDisposable
     private static readonly string[] InventoryAddons = { "Inventory", "InventoryLarge", "InventoryExpansion" };
     private static readonly string[] SaddlebagAddons = { "InventoryBuddy" };
     private static readonly string[] ArmouryAddons = { "ArmouryBoard" };
+    private static readonly string[] RetainerSellAddons = { "RetainerSellList" };
 
     private static readonly InventoryType[] PlayerBags =
     {
@@ -46,14 +47,21 @@ public sealed class InventoryPreloadService : IDisposable
         InventoryType.ArmorySoulCrystal,
     };
 
+    private static readonly InventoryType[] RetainerMarket =
+    {
+        InventoryType.RetainerMarket,
+    };
+
     private readonly Plugin plugin;
     private readonly IAddonLifecycle.AddonEventDelegate onInventoryUpdate;
     private readonly IAddonLifecycle.AddonEventDelegate onSaddlebagUpdate;
     private readonly IAddonLifecycle.AddonEventDelegate onArmouryUpdate;
+    private readonly IAddonLifecycle.AddonEventDelegate onRetainerSellUpdate;
 
     private DateTimeOffset lastInventoryPreload = DateTimeOffset.MinValue;
     private DateTimeOffset lastSaddlebagPreload = DateTimeOffset.MinValue;
     private DateTimeOffset lastArmouryPreload = DateTimeOffset.MinValue;
+    private DateTimeOffset lastRetainerSellPreload = DateTimeOffset.MinValue;
     private bool disposed;
 
     public InventoryPreloadService(Plugin plugin)
@@ -62,6 +70,7 @@ public sealed class InventoryPreloadService : IDisposable
         this.onInventoryUpdate = this.OnInventoryUpdate;
         this.onSaddlebagUpdate = this.OnSaddlebagUpdate;
         this.onArmouryUpdate = this.OnArmouryUpdate;
+        this.onRetainerSellUpdate = this.OnRetainerSellUpdate;
 
         Service.AddonLifecycle.RegisterListener(
             AddonEvent.PostRequestedUpdate, InventoryAddons, this.onInventoryUpdate);
@@ -69,6 +78,8 @@ public sealed class InventoryPreloadService : IDisposable
             AddonEvent.PostRequestedUpdate, SaddlebagAddons, this.onSaddlebagUpdate);
         Service.AddonLifecycle.RegisterListener(
             AddonEvent.PostRequestedUpdate, ArmouryAddons, this.onArmouryUpdate);
+        Service.AddonLifecycle.RegisterListener(
+            AddonEvent.PostRequestedUpdate, RetainerSellAddons, this.onRetainerSellUpdate);
 
         plugin.Cache.BatchFetched += this.OnBatchFetched;
     }
@@ -90,6 +101,9 @@ public sealed class InventoryPreloadService : IDisposable
 
     private void OnArmouryUpdate(AddonEvent type, AddonArgs args) =>
         this.TryPreload(ref this.lastArmouryPreload, ArmourySlots, "armoury");
+
+    private void OnRetainerSellUpdate(AddonEvent type, AddonArgs args) =>
+        this.TryPreload(ref this.lastRetainerSellPreload, RetainerMarket, "retainer market");
 
     private void TryPreload(ref DateTimeOffset lastPreload, InventoryType[] bags, string label)
     {
@@ -157,6 +171,7 @@ public sealed class InventoryPreloadService : IDisposable
             Service.AddonLifecycle.UnregisterListener(this.onInventoryUpdate);
             Service.AddonLifecycle.UnregisterListener(this.onSaddlebagUpdate);
             Service.AddonLifecycle.UnregisterListener(this.onArmouryUpdate);
+            Service.AddonLifecycle.UnregisterListener(this.onRetainerSellUpdate);
         }
         catch (Exception ex)
         {
