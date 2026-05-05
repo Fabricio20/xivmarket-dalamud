@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>XivMarket.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <!--
+    Compile the source files we want to test directly, instead of ProjectReferencing
+    the plugin. The plugin targets net10.0-windows and pulls in Dalamud.dll transitively;
+    pulling source files in keeps the test assembly cross-platform with no Dalamud
+    dependency. The files we test are pure BCL.
+  -->
+  <ItemGroup>
+    <Compile Include="..\XivMarket\Models\TooltipModels.cs" Link="Models\TooltipModels.cs" />
+    <Compile Include="..\XivMarket\Models\CacheEntry.cs" Link="Models\CacheEntry.cs" />
+    <Compile Include="..\XivMarket\Models\TooltipDocument.cs" Link="Models\TooltipDocument.cs" />
+    <Compile Include="..\XivMarket\Models\RenderContext.cs" Link="Models\RenderContext.cs" />
+    <Compile Include="..\XivMarket\Models\StaticWorldView.cs" Link="Models\StaticWorldView.cs" />
+    <Compile Include="..\XivMarket\Services\XivMarketClient.cs" Link="Services\XivMarketClient.cs" />
+    <Compile Include="..\XivMarket\Services\ItemPriceCache.cs" Link="Services\ItemPriceCache.cs" />
+    <Compile Include="..\XivMarket\Services\TooltipRenderer.cs" Link="Services\TooltipRenderer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures\tooltip_sample.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

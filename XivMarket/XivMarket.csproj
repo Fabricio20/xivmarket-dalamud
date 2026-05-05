@@ -1,0 +1,7 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.0.1.0</Version>
+    <Description>Query XivMarket for FFXIV marketboard prices in-game.</Description>
+    <PackageProjectUrl>https://github.com/notfab/xivmarket-dalamud</PackageProjectUrl>
+  </PropertyGroup>
+</Project>
