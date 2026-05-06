@@ -20,6 +20,9 @@ public class ConfigWindow : Window, IDisposable
     private bool roundUpBuf;
     private int priceScopeBuf;
     private int qualityModeBuf;
+    private float highlightVendorMultiplierBuf;
+    private int highlightMinPriceBuf;
+    private bool highlightMinPriceIsTotalBuf;
 
     public ConfigWindow(Plugin plugin)
         : base("XIV Market - Settings##xivmarket-config")
@@ -38,6 +41,9 @@ public class ConfigWindow : Window, IDisposable
         this.roundUpBuf = plugin.Configuration.RoundUp;
         this.priceScopeBuf = plugin.Configuration.PriceSourceScope;
         this.qualityModeBuf = plugin.Configuration.UndercutQualityMode;
+        this.highlightVendorMultiplierBuf = plugin.Configuration.HighlightVendorMultiplier;
+        this.highlightMinPriceBuf = plugin.Configuration.HighlightMinPrice;
+        this.highlightMinPriceIsTotalBuf = plugin.Configuration.HighlightMinPriceIsTotal;
     }
 
     public override void Draw()
@@ -55,11 +61,11 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.Spacing();
         ImGui.Checkbox("Use cheapest total stack", ref this.useTotalStackBuf);
-        ImGui.TextWrapped("If on, picks the listing with the lowest total cost (may be a smaller stack) instead of the lowest per-unit price.");
+        ImGui.TextDisabled("If ON, picks the listing with the lowest total cost instead of the lowest per-unit price.");
 
         ImGui.Spacing();
         ImGui.Checkbox("Verbose debug logging", ref this.debugLoggingBuf);
-        ImGui.TextWrapped("Logs per-hover diagnostic info to /xllog. Enable when troubleshooting.");
+        ImGui.TextDisabled("Logs per-hover diagnostic info to /xllog. Enable when troubleshooting.");
 
         ImGui.PopItemWidth();
 
@@ -81,7 +87,7 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.Spacing();
         ImGui.Checkbox("Round up", ref this.roundUpBuf);
-        ImGui.TextWrapped("If checked, round UP (encourages stable prices). If unchecked, round down.");
+        ImGui.TextDisabled("If checked, round UP (encourages stable prices). If unchecked, round down.");
 
         ImGui.Spacing();
         ImGui.Combo("##price-scope", ref this.priceScopeBuf, ScopeLabels, ScopeLabels.Length);
@@ -90,6 +96,27 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Spacing();
         ImGui.Combo("##quality-mode", ref this.qualityModeBuf, QualityModeLabels, QualityModeLabels.Length);
         ImGui.TextDisabled("Quality comparison mode for price calculation.");
+
+        ImGui.PopItemWidth();
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+        ImGui.Text("Inventory Highlighting");
+        ImGui.PushItemWidth(-1);
+
+        ImGui.Spacing();
+        ImGui.SliderFloat("##highlight-vendor-multiplier", ref this.highlightVendorMultiplierBuf, 1.0f, 10.0f, "%.1fx");
+        ImGui.TextDisabled("Vendor price multiplier. Items with market price below vendor sell price * this = red.");
+
+        ImGui.Spacing();
+        ImGui.InputInt("##highlight-min-price", ref this.highlightMinPriceBuf);
+        ImGui.TextDisabled("Minimum market price for green (absolute floor). 0 = disabled.");
+        if (this.highlightMinPriceBuf < 0) this.highlightMinPriceBuf = 0;
+
+        ImGui.Spacing();
+        ImGui.Checkbox("Use total stack value for minimum price", ref this.highlightMinPriceIsTotalBuf);
+        ImGui.TextDisabled("If ON, considers the total stack value instead.");
 
         ImGui.PopItemWidth();
 
@@ -107,6 +134,9 @@ public class ConfigWindow : Window, IDisposable
             this.plugin.Configuration.RoundUp = this.roundUpBuf;
             this.plugin.Configuration.PriceSourceScope = Math.Clamp(this.priceScopeBuf, 0, 2);
             this.plugin.Configuration.UndercutQualityMode = Math.Clamp(this.qualityModeBuf, 0, 3);
+            this.plugin.Configuration.HighlightVendorMultiplier = Math.Max(1.0f, this.highlightVendorMultiplierBuf);
+            this.plugin.Configuration.HighlightMinPrice = Math.Max(0, this.highlightMinPriceBuf);
+            this.plugin.Configuration.HighlightMinPriceIsTotal = this.highlightMinPriceIsTotalBuf;
             this.plugin.Configuration.Save();
         }
     }

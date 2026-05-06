@@ -26,6 +26,7 @@ public sealed class Plugin : IDalamudPlugin
     public TooltipInjector Injector { get; }
     public MarketBoardSpliceHook MarketBoardSplice { get; }
     public RetainerSellListHighlighter RetainerHighlighter { get; }
+    public InventoryHighlighter InventoryHighlight { get; }
     public InventoryPreloadService InventoryPreload { get; }
     public ItemDetailHook Hook { get; }
     public WindowSystem WindowSystem { get; } = new("XivMarket");
@@ -33,6 +34,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly MainWindow mainWindow;
     private readonly ConfigWindow configWindow;
     private readonly RetainerSellWindow retainerSellWindow;
+    private readonly HighlightToggleWindow highlightToggleWindow;
     private readonly CancellationTokenSource startupCts = new();
     private bool disposed;
 
@@ -61,15 +63,18 @@ public sealed class Plugin : IDalamudPlugin
             this.Injector = new TooltipInjector(Service.GameGui, Service.PluginLog);
             this.MarketBoardSplice = new MarketBoardSpliceHook(this);
             this.RetainerHighlighter = new RetainerSellListHighlighter(this);
+            this.InventoryHighlight = new InventoryHighlighter(this);
             this.InventoryPreload = new InventoryPreloadService(this);
             this.Hook = new ItemDetailHook(this);
 
             this.configWindow = new ConfigWindow(this);
             this.mainWindow = new MainWindow(this);
             this.retainerSellWindow = new RetainerSellWindow(this);
+            this.highlightToggleWindow = new HighlightToggleWindow(this);
             this.WindowSystem.AddWindow(this.configWindow);
             this.WindowSystem.AddWindow(this.mainWindow);
             this.WindowSystem.AddWindow(this.retainerSellWindow);
+            this.WindowSystem.AddWindow(this.highlightToggleWindow);
 
             Service.CommandManager.AddHandler(MainCommand, new CommandInfo(this.OnCommand)
             {
@@ -110,6 +115,7 @@ public sealed class Plugin : IDalamudPlugin
         TryRun("hook unregister", () => this.Hook?.Dispose());
         TryRun("mb splice unregister", () => this.MarketBoardSplice?.Dispose());
         TryRun("retainer highlighter unregister", () => this.RetainerHighlighter?.Dispose());
+        TryRun("inventory highlight unregister", () => this.InventoryHighlight?.Dispose());
         TryRun("inventory preload unregister", () => this.InventoryPreload?.Dispose());
 
         TryRun("framework-thread injector cleanup", () =>
@@ -149,6 +155,7 @@ public sealed class Plugin : IDalamudPlugin
                 pi.UiBuilder.OpenConfigUi -= this.ToggleConfigUi;
             }
             this.WindowSystem.RemoveAllWindows();
+            this.highlightToggleWindow?.Dispose();
             this.retainerSellWindow?.Dispose();
             this.mainWindow?.Dispose();
             this.configWindow?.Dispose();

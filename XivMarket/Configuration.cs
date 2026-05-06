@@ -34,6 +34,15 @@ public class Configuration : IPluginConfiguration
     /// <summary>Quality comparison mode. 0=Any, 1=MatchingQuality, 2=NqOnly, 3=HqOnly.</summary>
     public int UndercutQualityMode { get; set; } = 1;
 
+    /// <summary>Vendor price multiplier for inventory highlighting. Items with market price below vendor * this are red.</summary>
+    public float HighlightVendorMultiplier { get; set; } = 2.0f;
+
+    /// <summary>Absolute minimum market price for green highlight. 0 = disabled.</summary>
+    public int HighlightMinPrice { get; set; } = 1000;
+
+    /// <summary>If true, the minimum price floor checks total stack value (price * quantity) instead of per-unit.</summary>
+    public bool HighlightMinPriceIsTotal { get; set; } = true;
+
     public TimeSpan CacheTtl => TimeSpan.FromSeconds(Math.Max(60, this.CacheTtlSeconds));
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
